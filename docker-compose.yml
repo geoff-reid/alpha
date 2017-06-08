@@ -1,0 +1,16 @@
+version: '2'
+services:
+  mongo: # 27017
+    image: mongo:2.4.14
+    network_mode: "host"
+    privileged: true
+  rabbitmq: # 5672, 15672
+    image: rabbitmq:management
+    network_mode: "host"
+    privileged: true
+  test:
+    build: . 
+    network_mode: "host"
+    privileged: true
+
+
