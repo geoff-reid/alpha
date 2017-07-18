@@ -1,0 +1,280 @@
+---
+resource_types:
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+- name: on-core
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-core.git
+
+- name: on-tasks
+  type: git
+  source: 
+    uri: https://github.com/geoff-reid/on-tasks.git
+
+- name: on-taskgraph
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-taskgraph.git
+
+- name: on-taskgraph-artifactory
+  type: artifactory
+  source:
+    endpoint: http://10.240.16.60/artifactory
+    password: AP8x8Xc3gBZejL3M7EJ7zkhz9WB
+    regex: on-taskgraph_(?<version>.*).deb
+    repository: /generic-local/
+    skip_ssl_verification: true
+    username: admin
+
+- name: on-http
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-http.git
+
+- name: on-http-artifactory
+  type: artifactory
+  source:
+    endpoint: http://10.240.16.60/artifactory
+    password: AP8x8Xc3gBZejL3M7EJ7zkhz9WB
+    regex: on-http_(?<version>.*).deb
+    repository: /generic-local/
+    skip_ssl_verification: true
+    username: admin
+
+- name: on-syslog
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-syslog.git
+
+- name: on-syslog-artifactory
+  type: artifactory
+  source:
+    endpoint: http://10.240.16.60/artifactory
+    password: AP8x8Xc3gBZejL3M7EJ7zkhz9WB
+    regex: on-syslog_(?<version>.*).deb
+    repository: /generic-local/
+    skip_ssl_verification: true
+    username: admin
+
+- name: on-tftp
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-tftp.git
+
+- name: on-tftp-artifactory
+  type: artifactory
+  source:
+    endpoint: http://10.240.16.60/artifactory
+    password: AP8x8Xc3gBZejL3M7EJ7zkhz9WB
+    regex: on-tftp_(?<version>.*).deb
+    repository: /generic-local/
+    skip_ssl_verification: true
+    username: admin
+
+- name: on-dhcp-proxy
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-dhcp-proxy.git
+
+- name: on-dhcp-proxy-artifactory
+  type: artifactory
+  source:
+    endpoint: http://10.240.16.60/artifactory
+    password: AP8x8Xc3gBZejL3M7EJ7zkhz9WB
+    regex: on-dhcp-proxy_(?<version>.*).deb
+    repository: /generic-local/
+    skip_ssl_verification: true
+    username: admin
+
+jobs:
+- name: unittest-on-core
+  plan:
+  - get: on-core
+    trigger: true
+  - task: on-core-unittest 
+    file: on-core/alpha/unittest.yml
+
+- name: unittest-on-tasks
+  plan:
+  - get: on-tasks
+    trigger: true
+  - task: on-tasks-unittest
+    file: on-tasks/alpha/unittest.yml  
+
+- name: unittest-on-taskgraph
+  plan:
+  - get: on-taskgraph
+    trigger: true
+  - task: on-taskgraph-unittest
+    file: on-taskgraph/alpha/unittest.yml
+
+- name: deb-build-on-taskgraph
+  plan:
+  - aggregate:
+    - get: on-core 
+      trigger: true
+      passed: [unittest-on-core]
+    - get: on-tasks
+      trigger: true
+      passed: [unittest-on-tasks]
+    - get: on-taskgraph
+      passed: [unittest-on-taskgraph]
+      trigger: true
+  - task: build-deb
+    file: on-taskgraph/alpha/build_deb.yml
+  - put: on-taskgraph-artifactory
+    params: 
+      file: build/on-taskgraph_*.deb
+
+- name: unittest-on-http
+  plan:
+  - get: on-http
+    trigger: true
+  - task: on-http-unittest
+    file: on-http/alpha/unittest.yml
+
+- name: deb-build-on-http
+  plan:
+  - aggregate:
+    - get: on-core 
+      trigger: true
+      passed: [unittest-on-core]
+    - get: on-tasks
+      trigger: true
+      passed: [unittest-on-tasks]
+    - get: on-http
+      passed: [unittest-on-http]
+      trigger: true
+  - task: build-deb
+    file: on-http/alpha/build_deb.yml
+  - put: on-http-artifactory
+    params: 
+      file: build/on-http_*.deb
+
+- name: unittest-on-tftp
+  plan:
+  - get: on-tftp
+    trigger: true
+  - task: on-tftp-unittest
+    file: on-tftp/alpha/unittest.yml
+
+- name: deb-build-on-tftp
+  plan:
+  - aggregate:
+    - get: on-core 
+      trigger: true
+      passed: [unittest-on-core]
+    - get: on-tftp
+      passed: [unittest-on-tftp]
+      trigger: true
+  - task: build-deb
+    file: on-tftp/alpha/build_deb.yml
+  - put: on-tftp-artifactory
+    params: 
+      file: build/on-tftp_*.deb
+
+- name: unittest-on-syslog
+  plan:
+  - get: on-syslog
+    trigger: true
+  - task: on-syslog-unittest
+    file: on-syslog/alpha/unittest.yml
+
+- name: deb-build-on-syslog
+  plan:
+  - aggregate:
+    - get: on-core
+      trigger: true
+      passed: [unittest-on-core]
+    - get: on-syslog
+      passed: [unittest-on-syslog]
+      trigger: true
+  - task: build-deb
+    file: on-syslog/alpha/build_deb.yml
+  - put: on-syslog-artifactory
+    params: 
+      file: build/on-syslog_*.deb
+
+- name: unittest-on-dhcp-proxy
+  plan:
+  - get: on-dhcp-proxy
+    trigger: true
+  - task: on-dhcp-proxy-unittest
+    file: on-dhcp-proxy/alpha/unittest.yml
+
+- name: deb-build-on-dhcp-proxy
+  plan:
+  - aggregate:
+    - get: on-core
+      trigger: true
+      passed: [unittest-on-core]
+    - get: on-dhcp-proxy
+      passed: [unittest-on-dhcp-proxy]
+      trigger: true
+  - task: build-deb
+    file: on-dhcp-proxy/alpha/build_deb.yml
+  - put: on-dhcp-proxy-artifactory
+    params: 
+      file: build/on-dhcp-proxy_*.deb
+
+- name: deb-FIT-test
+  plan:
+  - aggregate:
+    - get: on-taskgraph-artifactory
+      trigger: true
+      passed: [deb-build-on-taskgraph]
+    - get: on-http-artifactory
+      trigger: true
+      passed: [deb-build-on-http]
+    - get: on-syslog-artifactory
+      trigger: true
+      passed: [deb-build-on-syslog]
+    - get: on-tftp-artifactory
+      trigger: true
+      passed: [deb-build-on-tftp]
+    - get: on-dhcp-proxy-artifactory
+      trigger: true
+      passed: [deb-build-on-dhcp-proxy]
+  - task: smoke-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      run:
+        path: echo
+        args: ["FIT test goes here!"]
+
+- name: deb-OS-install-test
+  plan:
+  - aggregate:
+    - get: on-taskgraph-artifactory
+      trigger: true
+      passed: [deb-build-on-taskgraph]
+    - get: on-http-artifactory
+      trigger: true
+      passed: [deb-build-on-http]
+    - get: on-syslog-artifactory
+      trigger: true
+      passed: [deb-build-on-syslog]
+    - get: on-tftp-artifactory
+      trigger: true
+      passed: [deb-build-on-tftp]
+    - get: on-dhcp-proxy-artifactory
+      trigger: true
+      passed: [deb-build-on-dhcp-proxy]
+  - task: OS-install-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      run:
+        path: echo
+        args: ["OS install tests goes here!"]
+

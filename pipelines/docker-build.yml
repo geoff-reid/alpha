@@ -1,0 +1,341 @@
+resources:
+- name: on-core
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-core.git
+
+- name: on-core-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-core
+    tag: poc
+
+- name: on-tasks
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-tasks.git
+
+- name: on-tasks-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-tasks
+    tag: poc
+
+- name: on-taskgraph
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-taskgraph.git
+
+- name: on-taskgraph-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-taskgraph
+    tag: poc
+
+- name: on-http
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-http.git
+
+- name: on-http-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-http
+    tag: poc
+
+- name: on-syslog
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-syslog.git
+
+- name: on-syslog-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-syslog
+    tag: poc
+
+- name: on-tftp
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-tftp.git
+
+- name: on-tftp-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-tftp
+    tag: poc
+
+- name: on-dhcp-proxy
+  type: git
+  source:
+    uri: https://github.com/geoff-reid/on-dhcp-proxy.git
+
+- name: on-dhcp-proxy-docker
+  type: docker-image
+  source:
+    insecure_registries:
+    - http://10.240.16.225:5000
+    repository: 10.240.16.225:5000/geoff/on-dhcp-proxy
+    tag: poc
+
+jobs:
+- name: unittest-on-core
+  plan:
+  - get: on-core
+    trigger: true
+  - task: on-core-unittest
+    file: on-core/alpha/unittest.yml
+
+- name: build-on-core-docker
+  plan:
+  - get: on-core
+    passed:
+    - unittest-on-core
+    trigger: true
+  - put: on-core-docker
+    params:
+      build: on-core
+
+- name: unittest-on-tasks
+  plan:
+  - get: on-tasks
+    trigger: true
+  - task: on-tasks-unittest
+    file: on-tasks/alpha/unittest.yml
+
+- name: build-on-tasks-docker
+  plan:
+  - get: on-tasks
+    passed:
+    - unittest-on-tasks
+    trigger: true
+  - get: on-core-docker
+    passed:
+    - build-on-core-docker
+    trigger: true
+  - put: on-tasks-docker
+    params:
+      build: on-tasks
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: unittest-on-taskgraph
+  plan:
+  - get: on-taskgraph
+    trigger: true
+  - task: on-taskgraph-unittest
+    file: on-taskgraph/alpha/unittest.yml
+
+- name: build-on-taskgraph-docker
+  plan:
+  - get: on-taskgraph
+    passed:
+    - unittest-on-taskgraph
+    trigger: true
+  - get: on-tasks-docker
+    passed:
+    - build-on-tasks-docker
+    trigger: true
+  - put: on-taskgraph-docker
+    params:
+      build: on-taskgraph
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: unittest-on-http
+  plan:
+  - get: on-http
+    trigger: true
+  - task: on-http-unittest
+    file: on-http/alpha/unittest.yml
+
+- name: build-on-http-docker
+  plan:
+  - get: on-http
+    passed:
+    - unittest-on-http
+    trigger: true
+  - get: on-tasks-docker
+    passed:
+    - build-on-tasks-docker
+    trigger: true
+  - put: on-http-docker
+    params:
+      build: on-http
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: unittest-on-tftp
+  plan:
+  - get: on-tftp
+    trigger: true
+  - task: on-tftp-unittest
+    file: on-tftp/alpha/unittest.yml
+
+- name: build-on-tftp-docker
+  plan:
+  - get: on-tftp
+    passed:
+    - unittest-on-tftp
+    trigger: true
+  - get: on-core-docker
+    passed:
+    - build-on-core-docker
+    trigger: true
+  - put: on-tftp-docker
+    params:
+      build: on-tftp
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: unittest-on-syslog
+  plan:
+  - get: on-syslog
+    trigger: true
+  - task: on-syslog-unittest
+    file: on-syslog/alpha/unittest.yml
+
+- name: build-on-syslog-docker
+  plan:
+  - get: on-syslog
+    passed:
+    - unittest-on-syslog
+    trigger: true
+  - get: on-core-docker
+    passed:
+    - build-on-core-docker
+    trigger: true
+  - put: on-syslog-docker
+    params:
+      build: on-syslog
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: unittest-on-dhcp-proxy
+  plan:
+  - get: on-dhcp-proxy
+    trigger: true
+  - task: on-dhcp-proxy-unittest
+    file: on-dhcp-proxy/alpha/unittest.yml
+
+- name: build-on-dhcp-proxy-docker
+  plan:
+  - get: on-dhcp-proxy
+    passed:
+    - unittest-on-dhcp-proxy
+    trigger: true
+  - get: on-core-docker
+    passed:
+    - build-on-core-docker
+    trigger: true
+  - put: on-dhcp-proxy-docker
+    params:
+      build: on-dhcp-proxy
+      build_args:
+        repo: 10.240.16.225:5000/geoff
+        tag: poc
+
+- name: docker-FIT-test
+  plan:
+  - aggregate:
+    - get: on-core-docker
+      passed:
+      - build-on-core-docker
+      trigger: true
+    - get: on-tasks-docker
+      passed:
+      - build-on-tasks-docker
+      trigger: true
+    - get: on-taskgraph-docker
+      passed:
+      - build-on-taskgraph-docker
+      trigger: true
+    - get: on-http-docker
+      passed:
+      - build-on-http-docker
+      trigger: true
+    - get: on-syslog-docker
+      passed:
+      - build-on-syslog-docker
+      trigger: true
+    - get: on-tftp-docker
+      passed:
+      - build-on-tftp-docker
+      trigger: true
+    - get: on-dhcp-proxy-docker
+      passed:
+      - build-on-dhcp-proxy-docker
+      trigger: true
+  - task: smoke-test-docker
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      run:
+        path: echo
+        args:
+        - Docker FIT test goes here!
+        dir: ""
+
+- name: docker-OS-install-test
+  plan:
+  - aggregate:
+    - get: on-core-docker
+      passed:
+      - build-on-core-docker
+      trigger: true
+    - get: on-tasks-docker
+      passed:
+      - build-on-tasks-docker
+      trigger: true
+    - get: on-taskgraph-docker
+      passed:
+      - build-on-taskgraph-docker
+      trigger: true
+    - get: on-http-docker
+      passed:
+      - build-on-http-docker
+      trigger: true
+    - get: on-syslog-docker
+      passed:
+      - build-on-syslog-docker
+      trigger: true
+    - get: on-tftp-docker
+      passed:
+      - build-on-tftp-docker
+      trigger: true
+    - get: on-dhcp-proxy-docker
+      passed:
+      - build-on-dhcp-proxy-docker
+      trigger: true
+  - task: os-install-test-docker
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      run:
+        path: echo
+        args:
+        - Docker OS isntall test goes here!
+        dir: ""
